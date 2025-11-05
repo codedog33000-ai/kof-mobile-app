@@ -495,11 +495,20 @@ function setupMessageFilters() {
 }
 
 function setupRefreshButton() {
-  document.getElementById('refreshBtn').addEventListener('click', refreshData);
+  const refreshBtn = document.getElementById('refreshBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', refreshData);
+  }
 }
 
 function setupSearch() {
   const searchInput = document.getElementById('carrierSearch');
+
+  // If element doesn't exist, skip setup
+  if (!searchInput) {
+    console.log('⏭️ Skipping search setup - element not found');
+    return;
+  }
 
   searchInput.addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase();
