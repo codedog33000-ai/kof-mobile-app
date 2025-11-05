@@ -2,12 +2,10 @@
 // KING OF FREIGHT AI - MOBILE APP (CLOUD VERSION)
 // ================================================
 
-// Configuration - UPDATE THIS AFTER DEPLOYMENT
+// Configuration - REAL-TIME SYNC WITH GITHUB GIST
 const config = {
-  serverUrl: window.location.origin, // Automatically uses current domain
-  reconnectDelay: 3000,
-  refreshInterval: 30000, // 30 seconds
-  apiKey: 'kof-mobile-2024-secure-key' // Must match server API_KEY
+  GIST_ID: '73cbcd74ceeb6fd34b90d6e5e378ae3b',
+  refreshInterval: 5000, // Check every 5 seconds
 };
 
 // State
@@ -34,14 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSearch();
   setupInstallPrompt();
 
-  // Connect to server
-  connectToServer();
+  // Load data from Gist
+  loadDataFromGist();
 
-  // Setup periodic refresh
+  // Setup periodic refresh (every 5 seconds)
   setInterval(() => {
-    if (isConnected) {
-      refreshData();
-    }
+    loadDataFromGist();
   }, config.refreshInterval);
 
   // Hide loading overlay after init
@@ -54,38 +50,60 @@ document.addEventListener('DOMContentLoaded', () => {
 // SERVER CONNECTION
 // ================================================
 
-async function connectToServer() {
-  console.log('📡 Connecting to server...');
-  updateConnectionStatus('connecting');
+// Load data from GitHub Gist (real-time sync with Chrome extension)
+async function loadDataFromGist() {
+  console.log('📡 Loading data from Gist...');
 
   try {
-    // Try to fetch initial data
-    const response = await fetch(`${config.serverUrl}/api/status`);
+    const response = await fetch(`https://api.github.com/gists/${config.GIST_ID}`);
 
     if (!response.ok) {
-      throw new Error('Server not reachable');
+      throw new Error('Gist not accessible');
     }
 
-    const data = await response.json();
-    console.log('✅ Connected to server');
-    console.log('📊 Server status:', data);
+    const gist = await response.json();
+    const data = JSON.parse(gist.files['kof-mobile-data.json'].content);
+
+    console.log('✅ Data loaded from Gist:', data.timestamp);
+
+    // Update UI with data
+    if (data.stats) {
+      updateStats(data.stats);
+    }
+
+    if (data.messages) {
+      messages = data.messages;
+      allInboxMessages = data.messages; // Update inbox messages
+      renderMessages();
+      loadInboxMessages(); // Update inbox tab
+    }
+
+    if (data.carriers) {
+      carriers = data.carriers;
+      renderCarriers();
+    }
+
+    if (data.activityLog) {
+      activityLog = data.activityLog;
+      renderActivity();
+    }
+
+    // Update autonomous monitor
+    if (data.currentDriver) {
+      updateCurrentDriver(data.currentDriver);
+    }
+
+    if (data.composingMessage) {
+      updateComposingMessage(data.composingMessage);
+    }
 
     isConnected = true;
     updateConnectionStatus('online');
 
-    // Load initial data
-    await loadAllData();
-
-    // Setup WebSocket for real-time updates
-    setupWebSocket();
-
   } catch (error) {
-    console.error('❌ Connection failed:', error);
+    console.error('❌ Error loading data:', error);
+    isConnected = false;
     updateConnectionStatus('offline');
-    showErrorModal('Unable to connect to server. Please check your internet connection.');
-
-    // Retry connection
-    setTimeout(connectToServer, config.reconnectDelay);
   }
 }
 
@@ -565,7 +583,7 @@ function showErrorModal(message) {
 
   document.getElementById('retryBtn').onclick = () => {
     modal.style.display = 'none';
-    connectToServer();
+    loadDataFromGist();
   };
 }
 
@@ -850,3 +868,26 @@ setupTabNavigation = function() {
     }
   });
 };
+
+// Update autonomous monitor sections
+function updateCurrentDriver(driverData) {
+  const statusEl = document.getElementById('currentDriverStatus');
+  const infoEl = document.getElementById('currentDriverInfo');
+
+  if (statusEl && driverData) {
+    statusEl.textContent = 'Processing';
+    statusEl.style.color = '#10b981';
+  }
+
+  if (infoEl && driverData) {
+    infoEl.textContent = `${driverData.company || 'Driver'} - ${driverData.phone || driverData.email || ''}`;
+  }
+}
+
+function updateComposingMessage(message) {
+  const composeEl = document.getElementById('composingMessage');
+
+  if (composeEl && message) {
+    composeEl.textContent = message;
+  }
+}
