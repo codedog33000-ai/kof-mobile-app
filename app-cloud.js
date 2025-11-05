@@ -591,3 +591,262 @@ if ('serviceWorker' in navigator) {
 }
 
 console.log('✅ App initialized (Cloud version)');
+
+// ================================================
+// INBOX TAB FUNCTIONALITY
+// ================================================
+
+let allInboxMessages = [];
+let currentInboxView = 'inbox';
+let currentInboxMessage = null;
+
+function setupInboxTab() {
+  // Navigation items
+  document.querySelectorAll('.inbox-nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+      switchInboxView(this.dataset.inboxView);
+    });
+  });
+
+  // Compose button
+  const composeBtn = document.getElementById('inboxComposeBtn');
+  if (composeBtn) {
+    composeBtn.addEventListener('click', () => showInboxCompose());
+  }
+
+  // Cancel compose button
+  const cancelBtn = document.getElementById('cancelComposeBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', closeInboxCompose);
+  }
+
+  // Back to inbox button
+  const backBtn = document.getElementById('backToInboxBtn');
+  if (backBtn) {
+    backBtn.addEventListener('click', closeInboxDetail);
+  }
+
+  // Load messages when inbox tab is opened
+  loadInboxMessages();
+}
+
+function switchInboxView(view) {
+  currentInboxView = view;
+
+  // Update nav
+  document.querySelectorAll('.inbox-nav-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  const navItem = document.querySelector(`.inbox-nav-item[data-inbox-view="${view}"]`);
+  if (navItem) navItem.classList.add('active');
+
+  // Close compose/detail views
+  closeInboxCompose();
+  closeInboxDetail();
+
+  // Show inbox view
+  document.getElementById('inboxView').style.display = 'flex';
+
+  displayInboxMessages();
+}
+
+function loadInboxMessages() {
+  // In mobile app, we'll load from the same data source
+  // For now, use the messages array from the main app
+  allInboxMessages = messages || [];
+  updateInboxBadges();
+  displayInboxMessages();
+}
+
+function updateInboxBadges() {
+  const unreadCount = allInboxMessages.filter(m => m.direction === 'received').length;
+  const badge = document.getElementById('inboxBadge');
+  if (badge) {
+    badge.textContent = unreadCount;
+  }
+}
+
+function displayInboxMessages() {
+  const messageList = document.getElementById('inboxMessageList');
+  if (!messageList) return;
+
+  let filtered = [];
+
+  if (currentInboxView === 'inbox') {
+    filtered = allInboxMessages.filter(m => m.direction === 'received');
+    const header = document.querySelector('#inboxView .inbox-header h1');
+    if (header) header.textContent = 'Inbox';
+  } else if (currentInboxView === 'sent') {
+    filtered = allInboxMessages.filter(m => !m.direction || m.direction === 'sent');
+    const header = document.querySelector('#inboxView .inbox-header h1');
+    if (header) header.textContent = 'Sent';
+  } else if (currentInboxView === 'all') {
+    filtered = allInboxMessages;
+    const header = document.querySelector('#inboxView .inbox-header h1');
+    if (header) header.textContent = 'All Messages';
+  } else if (currentInboxView === 'conversations') {
+    displayInboxConversations();
+    return;
+  }
+
+  if (filtered.length === 0) {
+    messageList.innerHTML = `
+      <div class="inbox-empty-state">
+        <div class="inbox-empty-state-icon">📭</div>
+        <h3>No messages</h3>
+        <p>Messages will appear here when you receive them</p>
+      </div>
+    `;
+    return;
+  }
+
+  filtered.sort((a, b) => b.timestamp - a.timestamp);
+
+  messageList.innerHTML = filtered.map((msg, idx) => {
+    const date = new Date(msg.timestamp);
+    const company = msg.carrier?.company || msg.from || 'Unknown';
+    const initial = company.charAt(0).toUpperCase();
+    const isUnread = msg.direction === 'received';
+    const preview = msg.content ? msg.content.substring(0, 100) : msg.message?.substring(0, 100) || '';
+
+    return `
+      <div class="inbox-message-item ${isUnread ? 'unread' : ''}" data-index="${idx}">
+        <div class="inbox-message-avatar">${initial}</div>
+        <div class="inbox-message-content">
+          <div class="inbox-message-header">
+            <span class="inbox-message-from">${company}</span>
+            <span class="inbox-message-time">${date.toLocaleDateString()} ${date.toLocaleTimeString()}</span>
+          </div>
+          <div class="inbox-message-preview">${preview}...</div>
+        </div>
+        ${isUnread ? '<span class="inbox-message-badge">NEW</span>' : ''}
+      </div>
+    `;
+  }).join('');
+
+  // Add click listeners
+  document.querySelectorAll('.inbox-message-item').forEach(item => {
+    item.addEventListener('click', function() {
+      openInboxMessage(parseInt(this.dataset.index));
+    });
+  });
+}
+
+function displayInboxConversations() {
+  // Group messages by carrier
+  const conversations = {};
+
+  allInboxMessages.forEach(msg => {
+    const company = msg.carrier?.company || msg.from || 'Unknown';
+    const key = msg.carrier?.phone || msg.carrier?.email || company;
+    if (!conversations[key]) {
+      conversations[key] = {
+        carrier: msg.carrier || { company },
+        messages: [],
+        lastTime: msg.timestamp
+      };
+    }
+    conversations[key].messages.push(msg);
+    if (msg.timestamp > conversations[key].lastTime) {
+      conversations[key].lastTime = msg.timestamp;
+    }
+  });
+
+  const messageList = document.getElementById('inboxMessageList');
+  const header = document.querySelector('#inboxView .inbox-header h1');
+  if (header) header.textContent = 'Conversations';
+
+  const sorted = Object.values(conversations).sort((a, b) => b.lastTime - a.lastTime);
+
+  messageList.innerHTML = sorted.map((conv, idx) => {
+    const date = new Date(conv.lastTime);
+    const company = conv.carrier.company || 'Unknown';
+    const initial = company.charAt(0).toUpperCase();
+    const hasUnread = conv.messages.some(m => m.direction === 'received');
+
+    return `
+      <div class="inbox-message-item ${hasUnread ? 'unread' : ''}" data-company="${company}">
+        <div class="inbox-message-avatar">${initial}</div>
+        <div class="inbox-message-content">
+          <div class="inbox-message-header">
+            <span class="inbox-message-from">${company}</span>
+            <span class="inbox-message-time">${date.toLocaleDateString()}</span>
+          </div>
+          <div class="inbox-message-preview">${conv.messages.length} messages</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openInboxMessage(index) {
+  const filtered = currentInboxView === 'inbox'
+    ? allInboxMessages.filter(m => m.direction === 'received')
+    : currentInboxView === 'sent'
+    ? allInboxMessages.filter(m => !m.direction || m.direction === 'sent')
+    : allInboxMessages;
+
+  currentInboxMessage = filtered[index];
+
+  document.getElementById('inboxView').style.display = 'none';
+  document.getElementById('inboxMessageDetailView').classList.add('active');
+
+  const date = new Date(currentInboxMessage.timestamp);
+  const company = currentInboxMessage.carrier?.company || currentInboxMessage.from || 'Unknown';
+  const content = currentInboxMessage.content || currentInboxMessage.message || '';
+  
+  document.getElementById('detailSubject').textContent =
+    currentInboxMessage.direction === 'received' ? 'Message from ' + company : 'Sent to ' + company;
+  document.getElementById('detailFrom').textContent = company;
+  document.getElementById('detailTime').textContent = date.toLocaleString();
+  document.getElementById('detailBody').textContent = content;
+}
+
+function closeInboxDetail() {
+  document.getElementById('inboxMessageDetailView').classList.remove('active');
+  document.getElementById('inboxView').style.display = 'flex';
+  currentInboxMessage = null;
+}
+
+function showInboxCompose(replyTo = null) {
+  document.getElementById('inboxView').style.display = 'none';
+  closeInboxDetail();
+  document.getElementById('inboxComposeView').classList.add('active');
+
+  if (replyTo) {
+    document.getElementById('inboxComposeTitle').textContent = 'Reply to ' + replyTo.company;
+    document.getElementById('composeEmail').value = replyTo.email || '';
+    document.getElementById('composePhone').value = replyTo.phone || '';
+    document.getElementById('composeCompany').value = replyTo.company || '';
+    document.getElementById('composeSubject').value = 'Re: Load Update';
+  } else {
+    document.getElementById('inboxComposeTitle').textContent = 'New Message';
+    document.getElementById('composeEmail').value = '';
+    document.getElementById('composePhone').value = '';
+    document.getElementById('composeCompany').value = '';
+    document.getElementById('composeSubject').value = 'Load Update';
+    document.getElementById('composeMessage').value = '';
+  }
+}
+
+function closeInboxCompose() {
+  document.getElementById('inboxComposeView').classList.remove('active');
+  document.getElementById('inboxView').style.display = 'flex';
+}
+
+// Initialize inbox when tab is shown
+const originalSetupTabNavigation = setupTabNavigation;
+setupTabNavigation = function() {
+  originalSetupTabNavigation();
+  
+  // Add inbox initialization when switching to inbox tab
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    if (btn.dataset.tab === 'inbox') {
+      btn.addEventListener('click', () => {
+        setTimeout(() => {
+          setupInboxTab();
+        }, 100);
+      });
+    }
+  });
+};
