@@ -36,6 +36,7 @@
     <!-- Tab Navigation -->
     <div class="tab-nav">
       <button class="tab-btn active" data-tab="monitor">📊 Monitor</button>
+      <button class="tab-btn" data-tab="inbox">📬 Inbox</button>
       <button class="tab-btn" data-tab="messages">💬 Messages</button>
       <button class="tab-btn" data-tab="carriers">🚛 Carriers</button>
       <button class="tab-btn" data-tab="alerts">🔔 Alerts</button>
@@ -145,6 +146,31 @@
               <p>No critical alerts</p>
               <small>Pickup/delivery notifications will appear here</small>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inbox Tab -->
+      <div class="tab-pane" id="tab-inbox">
+        <h3>📬 KOF Inbox</h3>
+
+        <div class="inbox-actions">
+          <button class="btn btn-primary compose-btn-mobile">✉️ Compose</button>
+          <button class="btn btn-ghost">🔄 Refresh</button>
+        </div>
+
+        <div class="inbox-nav-mobile">
+          <button class="inbox-nav-btn active" data-inbox-view="inbox">
+            📨 Inbox <span class="badge" id="inboxBadgeMobile">0</span>
+          </button>
+          <button class="inbox-nav-btn" data-inbox-view="sent">📤 Sent</button>
+          <button class="inbox-nav-btn" data-inbox-view="conversations">💬 Conversations</button>
+        </div>
+
+        <div id="inboxMessageList" class="inbox-message-list">
+          <div class="empty-state">
+            <p>📭 No messages yet</p>
+            <small>Messages from Google Voice will appear here</small>
           </div>
         </div>
       </div>
