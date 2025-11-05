@@ -71,28 +71,30 @@ function setupFirebaseListener() {
     }
 
     console.log('⚡ INSTANT UPDATE from Firebase:', new Date(data.timestamp).toLocaleTimeString());
+    console.log('📦 Received data:', {
+      stats: !!data.stats,
+      messages: data.messages?.length || 0,
+      carriers: data.carriers?.length || 0,
+      currentDriver: data.currentDriver?.company || 'none',
+      composingMessage: !!data.composingMessage
+    });
 
-    // Update UI with data INSTANTLY
-    if (data.stats) {
-      updateStats(data.stats);
-    }
+    // Update UI with data INSTANTLY - handle missing fields (Firebase strips nulls/empty arrays)
+    updateStats(data.stats || { sentToday: 0, replies: 0, aiHandled: 0 });
 
-    if (data.messages) {
-      messages = data.messages;
-      allInboxMessages = data.messages;
-      renderMessages();
-      loadInboxMessages();
-    }
+    // Always update messages (even if empty/undefined)
+    messages = data.messages || [];
+    allInboxMessages = data.messages || [];
+    renderMessages();
+    loadInboxMessages();
 
-    if (data.carriers) {
-      carriers = data.carriers;
-      renderCarriers();
-    }
+    // Always update carriers (even if empty/undefined)
+    carriers = data.carriers || [];
+    renderCarriers();
 
-    if (data.activityLog) {
-      activityLog = data.activityLog;
-      renderActivity();
-    }
+    // Always update activity log (even if empty/undefined)
+    activityLog = data.activityLog || [];
+    renderActivity();
 
     // Update autonomous monitor
     if (data.currentDriver) {
@@ -110,7 +112,7 @@ function setupFirebaseListener() {
     } else {
       // Clear composing message
       const composeEl = document.getElementById('composingMessage');
-      if (composeEl) composeEl.textContent = 'No message being composed';
+      if (composeEl) composeEl.textContent = 'Waiting...';
     }
 
     isConnected = true;
