@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>King of Freight AI - Mobile</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a0e27">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <div class="header">
+      <h1>🚛 King of Freight AI</h1>
+      <p class="subtitle">AI-Powered Freight Broker Assistant</p>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-indicator">
+        <span class="status-dot active" id="statusDot"></span>
+        <span id="statusText">Connected</span>
+      </div>
+      <div class="stats-mini">
+        <span title="Sent Today">📤 <strong id="miniSent">0</strong></span>
+        <span title="AI Responses">🤖 <strong id="miniAI">0</strong></span>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="monitor">📊 Monitor</button>
+      <button class="tab-btn" data-tab="messages">💬 Messages</button>
+      <button class="tab-btn" data-tab="carriers">🚛 Carriers</button>
+      <button class="tab-btn" data-tab="alerts">🔔 Alerts</button>
+    </div>
+
+    <!-- Status Message -->
+    <div id="statusMessage" class="status-message hidden"></div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+
+      <!-- Monitor Tab -->
+      <div class="tab-pane active" id="tab-monitor">
+        <h3>📊 Live Monitor</h3>
+
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+          <div class="stat-card">
+            <div class="stat-value" id="statSent">0</div>
+            <div class="stat-label">Sent Today</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statReplies">0</div>
+            <div class="stat-label">Replies</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statAI">0</div>
+            <div class="stat-label">AI Handled</div>
+          </div>
+        </div>
+
+        <!-- AUTONOMOUS MONITOR -->
+        <div class="autonomous-monitor-section">
+          <div class="autonomous-header">
+            <div class="autonomous-title">
+              <span class="lightning-icon">⚡</span>
+              <span class="title-text">AUTONOMOUS MONITOR</span>
+              <span class="live-badge">● LIVE</span>
+            </div>
+            <button class="btn-hide-monitor">Hide</button>
+          </div>
+          <div class="autonomous-subtitle">
+            Automatic driver outreach • Real-time monitoring • Test mode active
+          </div>
+
+          <div class="autonomous-cards">
+            <div class="autonomous-card">
+              <div class="card-header">
+                <span class="card-icon">📋</span>
+                <span class="card-title">CURRENT DRIVER</span>
+              </div>
+              <div class="card-content">
+                <div id="currentDriverStatus" class="driver-status">Idle</div>
+                <div id="currentDriverInfo" class="driver-info">Waiting for extraction...</div>
+              </div>
+            </div>
+
+            <div class="autonomous-card">
+              <div class="card-header">
+                <span class="card-icon">✍️</span>
+                <span class="card-title">COMPOSING</span>
+              </div>
+              <div class="card-content">
+                <div id="composingMessage" class="composing-content">Waiting...</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="autonomous-footer">
+            <div class="autonomous-status">
+              <span class="status-icon">⚡</span>
+              <span>Autonomous mode active</span>
+            </div>
+            <div class="autonomous-actions">
+              <button class="btn-send">📧 SEND</button>
+              <button class="btn-edit">✏️</button>
+              <button class="btn-delete">❌</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="activity-section">
+          <div class="section-header">
+            <h4>Activity Feed</h4>
+            <button id="refreshBtn" class="btn btn-small btn-ghost">Refresh</button>
+          </div>
+          <div id="activityLog" class="activity-log">
+            <div class="activity-item system">
+              <div class="activity-icon">💡</div>
+              <div class="activity-content">
+                <div class="activity-text">Mobile app connected. Waiting for data...</div>
+                <div class="activity-time">Just now</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Critical Alerts -->
+        <div class="conversations-section">
+          <div class="section-header">
+            <h4>🔴 Critical Alerts</h4>
+            <button id="clearAlertsBtn" class="btn btn-small btn-ghost">Clear</button>
+          </div>
+          <div id="criticalAlerts" class="conversations-list">
+            <div class="empty-state">
+              <p>No critical alerts</p>
+              <small>Pickup/delivery notifications will appear here</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages Tab -->
+      <div class="tab-pane" id="tab-messages">
+        <h3>💬 Message History</h3>
+        <div id="messagesList" class="messages-list">
+          <div class="empty-state">
+            <p>No messages yet</p>
+            <small>Messages from extension will appear here</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carriers Tab -->
+      <div class="tab-pane" id="tab-carriers">
+        <h3>🚛 Active Carriers</h3>
+        <div id="carriersList" class="carriers-list">
+          <div class="empty-state">
+            <p>No carriers yet</p>
+            <small>Extracted carriers will appear here</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts Tab -->
+      <div class="tab-pane" id="tab-alerts">
+        <h3>🔔 All Notifications</h3>
+        <div id="allAlerts" class="alerts-list">
+          <div class="empty-state">
+            <p>No notifications yet</p>
+            <small>All alerts will appear here</small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app-cloud.js"></script>
+</body>
+</html>
