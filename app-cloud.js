@@ -79,7 +79,8 @@ function setupFirebaseListener() {
       messages: data.messages?.length || 0,
       carriers: data.carriers?.length || 0,
       currentDriver: data.currentDriver?.company || 'none',
-      composingMessage: !!data.composingMessage
+      composingMessage: !!data.composingMessage,
+      countdown: data.countdown ? `${data.countdown.seconds}s` : 'none'
     });
 
     // Update UI with data INSTANTLY - handle missing fields (Firebase strips nulls/empty arrays)
@@ -116,6 +117,18 @@ function setupFirebaseListener() {
       // Clear composing message
       const composeEl = document.getElementById('composingMessage');
       if (composeEl) composeEl.textContent = 'Waiting...';
+    }
+
+    // Update countdown timer
+    if (data.countdown) {
+      showCountdown(data.countdown);
+    } else {
+      hideCountdown();
+    }
+
+    // Update automation settings display
+    if (data.automation) {
+      updateAutomationStatus(data.automation);
     }
 
     isConnected = true;
@@ -941,5 +954,54 @@ function updateComposingMessage(message) {
 
   if (composeEl && message) {
     composeEl.textContent = message;
+  }
+}
+
+function showCountdown(countdown) {
+  // Update AUTONOMOUS MONITOR footer to show countdown
+  const footer = document.querySelector('.autonomous-footer');
+  if (!footer) return;
+
+  const statusEl = footer.querySelector('.autonomous-status span:last-child');
+  if (statusEl) {
+    const modeText = countdown.testMode ? 'TEST MODE' : 'LIVE MODE';
+    statusEl.innerHTML = `⏱️ Auto-sending in <strong>${countdown.seconds}s</strong> (${modeText})`;
+    statusEl.style.color = countdown.seconds <= 3 ? '#ef4444' : '#f59e0b';
+  }
+}
+
+function hideCountdown() {
+  const footer = document.querySelector('.autonomous-footer');
+  if (!footer) return;
+
+  const statusEl = footer.querySelector('.autonomous-status span:last-child');
+  if (statusEl) {
+    statusEl.innerHTML = 'Autonomous mode active';
+    statusEl.style.color = '';
+  }
+}
+
+function updateAutomationStatus(automation) {
+  // Show automation settings in the status bar
+  const statusBar = document.querySelector('.status-bar');
+  if (!statusBar) return;
+
+  // Add automation indicator
+  let autoIndicator = document.getElementById('autoIndicator');
+  if (!autoIndicator) {
+    autoIndicator = document.createElement('span');
+    autoIndicator.id = 'autoIndicator';
+    autoIndicator.style.cssText = 'font-size: 11px; color: #64748b; margin-left: 8px;';
+    const statsMini = statusBar.querySelector('.stats-mini');
+    if (statsMini) statsMini.appendChild(autoIndicator);
+  }
+
+  if (automation.autoReplyEnabled) {
+    const modeText = automation.testMode ? '🧪 TEST' : '🔴 LIVE';
+    autoIndicator.textContent = `${modeText} • ${automation.autoReplyDelay}s`;
+    autoIndicator.title = `Auto-reply: ${automation.autoReplyEnabled ? 'ON' : 'OFF'} | Delay: ${automation.autoReplyDelay}s | Mode: ${automation.testMode ? 'TEST' : 'LIVE'}`;
+  } else {
+    autoIndicator.textContent = '⏸️ Manual';
+    autoIndicator.title = 'Auto-reply is OFF - manual sending only';
   }
 }
