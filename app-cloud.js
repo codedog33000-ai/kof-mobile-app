@@ -1,12 +1,21 @@
 // ================================================
-// KING OF FREIGHT AI - MOBILE APP (CLOUD VERSION)
+// KING OF FREIGHT AI - MOBILE APP (FIREBASE REAL-TIME)
 // ================================================
 
-// Configuration - REAL-TIME SYNC WITH GITHUB GIST
-const config = {
-  GIST_ID: 'ebebd928af02afe0debc3d13f0ccc6b4', // FRESH GIST - no rate limits!
-  refreshInterval: 3000, // Check every 3 seconds (extension updates every 30s)
+// Firebase Configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBtD2OQRKEn5bCqlcsiIfcia6A7cYuBnJQ",
+  authDomain: "kof-mobile-sync.firebaseapp.com",
+  databaseURL: "https://kof-mobile-sync-default-rtdb.firebaseio.com",
+  projectId: "kof-mobile-sync",
+  storageBucket: "kof-mobile-sync.firebasestorage.app",
+  messagingSenderId: "914330123045",
+  appId: "1:914330123045:web:260958ef677eb11cf778cc"
 };
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
 // State
 let isConnected = false;
@@ -23,7 +32,7 @@ let activityLog = [];
 // ================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 King of Freight AI Mobile - Starting...');
+  console.log('⚡ King of Freight AI Mobile - Firebase Real-Time!');
 
   // Setup event listeners
   setupTabNavigation();
@@ -32,13 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSearch();
   setupInstallPrompt();
 
-  // Load data from Gist
-  loadDataFromGist();
-
-  // Setup periodic refresh (every 5 seconds)
-  setInterval(() => {
-    loadDataFromGist();
-  }, config.refreshInterval);
+  // Setup Firebase real-time listener (INSTANT UPDATES!)
+  setupFirebaseListener();
 
   // Hide loading overlay after init
   setTimeout(() => {
@@ -47,35 +51,37 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ================================================
-// SERVER CONNECTION
+// FIREBASE REAL-TIME LISTENER (INSTANT UPDATES!)
 // ================================================
 
-// Load data from GitHub Gist (real-time sync with Chrome extension)
-async function loadDataFromGist() {
-  console.log('📡 Loading data from Gist...');
+// Setup Firebase real-time listener - updates INSTANTLY when extension changes data
+function setupFirebaseListener() {
+  console.log('⚡ Setting up Firebase real-time listener...');
 
-  try {
-    const response = await fetch(`https://api.github.com/gists/${config.GIST_ID}`);
+  const syncDataRef = database.ref('syncData');
 
-    if (!response.ok) {
-      throw new Error('Gist not accessible');
+  // Listen for changes in real-time
+  syncDataRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+
+    if (!data) {
+      console.log('⏳ Waiting for data from extension...');
+      updateConnectionStatus('connecting');
+      return;
     }
 
-    const gist = await response.json();
-    const data = JSON.parse(gist.files['kof-mobile-data.json'].content);
+    console.log('⚡ INSTANT UPDATE from Firebase:', new Date(data.timestamp).toLocaleTimeString());
 
-    console.log('✅ Data loaded from Gist:', data.timestamp);
-
-    // Update UI with data
+    // Update UI with data INSTANTLY
     if (data.stats) {
       updateStats(data.stats);
     }
 
     if (data.messages) {
       messages = data.messages;
-      allInboxMessages = data.messages; // Update inbox messages
+      allInboxMessages = data.messages;
       renderMessages();
-      loadInboxMessages(); // Update inbox tab
+      loadInboxMessages();
     }
 
     if (data.carriers) {
@@ -91,20 +97,31 @@ async function loadDataFromGist() {
     // Update autonomous monitor
     if (data.currentDriver) {
       updateCurrentDriver(data.currentDriver);
+    } else {
+      // Clear autonomous monitor if no current driver
+      const statusEl = document.getElementById('currentDriverStatus');
+      const infoEl = document.getElementById('currentDriverInfo');
+      if (statusEl) statusEl.textContent = 'Idle';
+      if (infoEl) infoEl.textContent = 'Waiting for extraction...';
     }
 
     if (data.composingMessage) {
       updateComposingMessage(data.composingMessage);
+    } else {
+      // Clear composing message
+      const composeEl = document.getElementById('composingMessage');
+      if (composeEl) composeEl.textContent = 'No message being composed';
     }
 
     isConnected = true;
     updateConnectionStatus('online');
-
-  } catch (error) {
-    console.error('❌ Error loading data:', error);
+  }, (error) => {
+    console.error('❌ Firebase error:', error);
     isConnected = false;
     updateConnectionStatus('offline');
-  }
+  });
+
+  console.log('✅ Firebase listener active - waiting for updates...');
 }
 
 function setupWebSocket() {
