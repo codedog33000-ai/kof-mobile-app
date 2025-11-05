@@ -46,7 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Hide loading overlay after init
   setTimeout(() => {
-    document.getElementById('loadingOverlay').style.display = 'none';
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      loadingOverlay.style.display = 'none';
+    }
   }, 1000);
 });
 
@@ -324,9 +327,13 @@ function updateSystemStatus(status) {
 }
 
 function updateStats(stats) {
-  document.getElementById('statSent').textContent = stats.sent || 0;
-  document.getElementById('statReplies').textContent = stats.replies || 0;
-  document.getElementById('statAI').textContent = stats.aiHandled || 0;
+  const statSent = document.getElementById('statSent');
+  const statReplies = document.getElementById('statReplies');
+  const statAI = document.getElementById('statAI');
+
+  if (statSent) statSent.textContent = stats.sentToday || stats.sent || 0;
+  if (statReplies) statReplies.textContent = stats.replies || 0;
+  if (statAI) statAI.textContent = stats.aiHandled || 0;
 }
 
 function showCriticalAlert(event) {
@@ -371,6 +378,8 @@ async function acknowledgeAlert(eventId) {
 function renderActivity() {
   const feed = document.getElementById('activityFeed');
 
+  if (!feed) return; // Element doesn't exist
+
   if (activityLog.length === 0) {
     feed.innerHTML = `
       <div class="empty-state">
@@ -394,6 +403,8 @@ function renderActivity() {
 
 function renderMessages() {
   const list = document.getElementById('messagesList');
+
+  if (!list) return; // Element doesn't exist
 
   let filtered = messages;
   if (messageFilter !== 'all') {
@@ -423,16 +434,20 @@ function renderMessages() {
 
   const unreadCount = messages.filter(m => m.unread).length;
   const badge = document.getElementById('unreadBadge');
-  if (unreadCount > 0) {
-    badge.textContent = unreadCount;
-    badge.style.display = 'block';
-  } else {
-    badge.style.display = 'none';
+  if (badge) {
+    if (unreadCount > 0) {
+      badge.textContent = unreadCount;
+      badge.style.display = 'block';
+    } else {
+      badge.style.display = 'none';
+    }
   }
 }
 
 function renderCarriers() {
   const list = document.getElementById('carriersList');
+
+  if (!list) return; // Element doesn't exist
 
   if (carriers.length === 0) {
     list.innerHTML = `
