@@ -87,13 +87,41 @@ function setupFirebaseListener() {
     updateStats(data.stats || { sentToday: 0, replies: 0, aiHandled: 0 });
 
     // Always update messages (even if empty/undefined)
-    messages = data.messages || [];
-    allInboxMessages = data.messages || [];
+    // Also extract messages from conversationHistory if messages array is empty
+    if (data.messages && data.messages.length > 0) {
+      messages = data.messages;
+      allInboxMessages = data.messages;
+    } else if (data.conversationHistory) {
+      // Extract all messages from conversation history
+      messages = [];
+      Object.values(data.conversationHistory).forEach(conv => {
+        if (conv.messages && conv.messages.length > 0) {
+          messages.push(...conv.messages.map(msg => ({
+            ...msg,
+            carrier: conv.carrier
+          })));
+        }
+      });
+      allInboxMessages = messages;
+      console.log(`📦 Extracted ${messages.length} messages from conversationHistory`);
+    } else {
+      messages = [];
+      allInboxMessages = [];
+    }
     renderMessages();
     loadInboxMessages();
 
     // Always update carriers (even if empty/undefined)
-    carriers = data.carriers || [];
+    // Also extract carriers from conversationHistory if carriers array is empty
+    if (data.carriers && data.carriers.length > 0) {
+      carriers = data.carriers;
+    } else if (data.conversationHistory) {
+      // Extract carriers from conversation history
+      carriers = Object.values(data.conversationHistory).map(conv => conv.carrier).filter(Boolean);
+      console.log(`📦 Extracted ${carriers.length} carriers from conversationHistory`);
+    } else {
+      carriers = [];
+    }
     renderCarriers();
 
     // Always update activity log (even if empty/undefined)
