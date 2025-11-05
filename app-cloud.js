@@ -4,8 +4,8 @@
 
 // Configuration - REAL-TIME SYNC WITH GITHUB GIST
 const config = {
-  GIST_ID: '73cbcd74ceeb6fd34b90d6e5e378ae3b',
-  refreshInterval: 5000, // Check every 5 seconds (extension updates every 60s)
+  GIST_ID: 'ebebd928af02afe0debc3d13f0ccc6b4', // FRESH GIST - no rate limits!
+  refreshInterval: 3000, // Check every 3 seconds (extension updates every 30s)
 };
 
 // State
