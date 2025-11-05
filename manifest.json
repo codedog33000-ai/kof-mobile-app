@@ -2,7 +2,7 @@
   "name": "King of Freight AI Mobile",
   "short_name": "KOF AI",
   "description": "Monitor your King of Freight AI extension from anywhere",
-  "start_url": "/kof-mobile-app/",
+  "start_url": "./",
   "scope": "/kof-mobile-app/",
   "display": "standalone",
   "background_color": "#0f172a",
