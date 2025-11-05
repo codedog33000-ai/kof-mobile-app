@@ -286,20 +286,29 @@ async function refreshData() {
 // ================================================
 
 function updateConnectionStatus(status) {
-  const statusEl = document.getElementById('connectionStatus');
-  statusEl.classList.remove('online', 'offline', 'connecting');
-  statusEl.classList.add(status);
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
 
-  const statusText = statusEl.querySelector('.status-text');
+  if (!statusDot || !statusText) return; // Elements don't exist
+
+  // Update status dot classes
+  statusDot.classList.remove('active', 'offline', 'connecting');
+
   switch (status) {
     case 'online':
+      statusDot.classList.add('active');
       statusText.textContent = 'Connected';
+      statusText.style.color = '#10b981';
       break;
     case 'offline':
+      statusDot.classList.add('offline');
       statusText.textContent = 'Offline';
+      statusText.style.color = '#ef4444';
       break;
     case 'connecting':
+      statusDot.classList.add('connecting');
       statusText.textContent = 'Connecting...';
+      statusText.style.color = '#f59e0b';
       break;
   }
 }
